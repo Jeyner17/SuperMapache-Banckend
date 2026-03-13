@@ -15,6 +15,8 @@ const { inventarioRoutes } = require('./modules/inventario');
 const { proveedorRoutes } = require('./modules/proveedores');
 const { compraRoutes } = require('./modules/compras');
 const { escaneoRoutes } = require('./modules/escaneo');
+const { ventaRoutes } = require('./modules/ventas');
+const { configuracionRoutes } = require('./modules/configuracion');
 
 
 const app = express();
@@ -60,6 +62,8 @@ app.use('/api/inventario', inventarioRoutes);
 app.use('/api/proveedores', proveedorRoutes);
 app.use('/api/compras', compraRoutes);
 app.use('/api/escaneo', escaneoRoutes);
+app.use('/api/ventas', ventaRoutes);
+app.use('/api/configuracion', configuracionRoutes);
 
 
 // Ruta no encontrada
