@@ -1,8 +1,20 @@
+const fs = require('fs');
+const path = require('path');
 const app = require('./app');
 const { testConnection, syncModels } = require('./database/connection');
 const appConfig = require('./shared/config/app.config');
 const logger = require('./shared/utils/logger');
 const { verificarEstadosLotesCron } = require('./shared/jobs/inventario.job');
+
+// Garantizar que las carpetas de uploads existan al arrancar
+const UPLOADS_ROOT = path.resolve(__dirname, '../uploads');
+['productos'].forEach((subdir) => {
+  const dir = path.join(UPLOADS_ROOT, subdir);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    logger.info(`📁 Carpeta creada: ${dir}`);
+  }
+});
 
 const PORT = appConfig.app.port;
 

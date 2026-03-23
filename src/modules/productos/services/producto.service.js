@@ -18,6 +18,8 @@ class ProductoService {
       // Filtros
       if (filters.activo !== undefined) {
         where.activo = filters.activo;
+      } else {
+        where.activo = true; // Por defecto solo productos activos
       }
 
       if (filters.categoria_id) {

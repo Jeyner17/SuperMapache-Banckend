@@ -2,10 +2,12 @@ const productoService = require('../services/producto.service');
 const ApiResponse = require('../../../shared/utils/response');
 const logger = require('../../../shared/utils/logger');
 
+const buildImageUrl = (req) =>
+  `${req.protocol}://${req.get('host')}/uploads/productos/${req.file.filename}`;
+
 class ProductoController {
   /**
    * GET /api/productos
-   * Obtener todos los productos con paginación
    */
   async getAll(req, res) {
     try {
@@ -29,7 +31,6 @@ class ProductoController {
 
   /**
    * GET /api/productos/:id
-   * Obtener producto por ID
    */
   async getById(req, res) {
     try {
@@ -48,7 +49,6 @@ class ProductoController {
 
   /**
    * GET /api/productos/codigo/:codigoBarras
-   * Buscar producto por código de barras
    */
   async getByCodigoBarras(req, res) {
     try {
@@ -68,11 +68,21 @@ class ProductoController {
 
   /**
    * POST /api/productos
-   * Crear nuevo producto
    */
   async create(req, res) {
     try {
-      const producto = await productoService.create(req.body);
+      const { imagen: _ignored, ...rest } = req.body;
+      const data = {
+        ...rest,
+        requiere_caducidad: rest.requiere_caducidad === 'true' || rest.requiere_caducidad === true,
+        activo: rest.activo === 'true' || rest.activo === true,
+      };
+
+      if (req.file) {
+        data.imagen = buildImageUrl(req);
+      }
+
+      const producto = await productoService.create(data);
 
       return ApiResponse.created(res, producto, 'Producto creado exitosamente');
     } catch (error) {
@@ -83,12 +93,27 @@ class ProductoController {
 
   /**
    * PUT /api/productos/:id
-   * Actualizar producto
    */
   async update(req, res) {
     try {
       const { id } = req.params;
-      const producto = await productoService.update(id, req.body);
+      const { imagen: imagenBody, ...rest } = req.body;
+      const data = {
+        ...rest,
+        requiere_caducidad: rest.requiere_caducidad === 'true' || rest.requiere_caducidad === true,
+        activo: rest.activo === 'true' || rest.activo === true,
+      };
+
+      if (req.file) {
+        // Nueva imagen subida
+        data.imagen = buildImageUrl(req);
+      } else if (imagenBody === '' || imagenBody === 'null') {
+        // Usuario eliminó la imagen
+        data.imagen = null;
+      }
+      // Si ninguno aplica: no incluir imagen en el update
+
+      const producto = await productoService.update(id, data);
 
       return ApiResponse.success(res, producto, 'Producto actualizado exitosamente');
     } catch (error) {
@@ -102,16 +127,15 @@ class ProductoController {
 
   /**
    * DELETE /api/productos/:id
-   * Eliminar producto (soft delete)
    */
   async delete(req, res) {
     try {
       const { id } = req.params;
-      
+
       logger.info(`Solicitud de eliminación de producto ID: ${id}`);
-      
-      const resultado = await productoService.delete(id);
-      
+
+      await productoService.delete(id);
+
       logger.info(`Producto eliminado exitosamente ID: ${id}`);
 
       return ApiResponse.success(res, { eliminado: true }, 'Producto eliminado exitosamente');

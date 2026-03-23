@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const path = require('path');
 require('dotenv').config();
 
 const appConfig = require('./shared/config/app.config');
@@ -34,7 +35,11 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-app.use('/uploads', express.static(appConfig.upload.path));
+// Archivos estáticos — cross-origin necesario porque frontend y backend están en puertos distintos
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.resolve(__dirname, '../uploads')));
 
 // RUTAS
 app.get('/', (req, res) => {
