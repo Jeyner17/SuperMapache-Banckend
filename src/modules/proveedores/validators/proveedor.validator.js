@@ -18,8 +18,10 @@ const createProveedorValidator = [
   body('ruc')
     .optional()
     .trim()
+    .isNumeric()
+    .withMessage('El RUC solo puede contener números')
     .isLength({ min: 13, max: 13 })
-    .withMessage('El RUC debe tener 13 caracteres'),
+    .withMessage('El RUC debe tener exactamente 13 dígitos'),
   
   body('email')
     .optional()
