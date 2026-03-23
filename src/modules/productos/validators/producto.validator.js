@@ -36,9 +36,11 @@ const createProductoValidator = [
   body('codigo_barras')
     .optional()
     .trim()
-    .isLength({ min: 8, max: 50 })
-    .withMessage('El código de barras debe tener entre 8 y 50 caracteres'),
-  
+    .isNumeric()
+    .withMessage('El código de barras solo puede contener números')
+    .isLength({ min: 8, max: 13 })
+    .withMessage('El código de barras debe tener entre 8 y 13 dígitos'),
+
   body('sku')
     .optional()
     .trim()
@@ -108,9 +110,11 @@ const updateProductoValidator = [
   body('codigo_barras')
     .optional()
     .trim()
-    .isLength({ min: 8, max: 50 })
-    .withMessage('El código de barras debe tener entre 8 y 50 caracteres'),
-  
+    .isNumeric()
+    .withMessage('El código de barras solo puede contener números')
+    .isLength({ min: 8, max: 13 })
+    .withMessage('El código de barras debe tener entre 8 y 13 dígitos'),
+
   body('activo')
     .optional()
     .isBoolean()
