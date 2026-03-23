@@ -73,7 +73,7 @@ const createProductoValidator = [
   
   body('unidad_medida')
     .optional()
-    .isIn(['unidad', 'kg', 'g', 'l', 'ml', 'caja', 'paquete'])
+    .isIn(['unidad', 'kg', 'g', 'lb', 'oz', 'l', 'ml', 'caja', 'paquete', 'docena', 'bolsa', 'lata', 'botella'])
     .withMessage('Unidad de medida no válida'),
 
   (req, res, next) => {

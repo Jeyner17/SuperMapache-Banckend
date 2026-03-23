@@ -74,7 +74,7 @@ module.exports = {
         defaultValue: 21
       },
       unidad_medida: {
-        type: Sequelize.ENUM('unidad', 'kg', 'g', 'l', 'ml', 'caja', 'paquete'),
+        type: Sequelize.ENUM('unidad', 'kg', 'g', 'lb', 'oz', 'l', 'ml', 'caja', 'paquete', 'docena', 'bolsa', 'lata', 'botella'),
         defaultValue: 'unidad'
       },
       activo: {

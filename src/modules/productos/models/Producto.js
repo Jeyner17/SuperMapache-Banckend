@@ -73,7 +73,7 @@ const Producto = sequelize.define('Producto', {
     comment: 'Días antes de caducidad para alertar (por defecto 3 semanas)'
   },
   unidad_medida: {
-    type: DataTypes.ENUM('unidad', 'kg', 'g', 'l', 'ml', 'caja', 'paquete'),
+    type: DataTypes.ENUM('unidad', 'kg', 'g', 'lb', 'oz', 'l', 'ml', 'caja', 'paquete', 'docena', 'bolsa', 'lata', 'botella'),
     defaultValue: 'unidad'
   },
   activo: {
