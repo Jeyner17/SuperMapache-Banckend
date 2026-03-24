@@ -431,6 +431,38 @@ class CreditoService {
   }
 
   /**
+   * Créditos para generación de alertas (llamado por alerta.service)
+   */
+  async getCreditosParaAlertas() {
+    try {
+      const ahora = new Date();
+      const en7Dias = new Date(Date.now() + 7 * 86400000);
+
+      const [porVencer, vencidos] = await Promise.all([
+        Credito.findAll({
+          where: {
+            estado: { [Op.in]: ['pendiente', 'parcial'] },
+            fecha_vencimiento: { [Op.between]: [ahora, en7Dias] }
+          },
+          include: [{ model: ClienteCredito, as: 'cliente', attributes: ['id', 'nombre'] }]
+        }),
+        Credito.findAll({
+          where: {
+            estado: { [Op.in]: ['pendiente', 'parcial'] },
+            fecha_vencimiento: { [Op.lt]: ahora }
+          },
+          include: [{ model: ClienteCredito, as: 'cliente', attributes: ['id', 'nombre'] }]
+        })
+      ]);
+
+      return { por_vencer: porVencer, vencidos };
+    } catch (error) {
+      logger.error('Error al obtener créditos para alertas:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Resumen de cartera para dashboard
    */
   async getResumen() {

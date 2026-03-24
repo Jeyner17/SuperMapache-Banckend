@@ -5,6 +5,7 @@ const { testConnection, syncModels } = require('./database/connection');
 const appConfig = require('./shared/config/app.config');
 const logger = require('./shared/utils/logger');
 const { verificarEstadosLotesCron } = require('./shared/jobs/inventario.job');
+const { generarAlertasCron } = require('./shared/jobs/alertas.job');
 
 // Garantizar que las carpetas de uploads existan al arrancar
 const UPLOADS_ROOT = path.resolve(__dirname, '../uploads');
@@ -39,6 +40,7 @@ const startServer = async () => {
     // 3. Iniciar cron jobs
     logger.info('⏰ Configurando cron jobs...');
     verificarEstadosLotesCron();
+    generarAlertasCron();
 
     // 4. Iniciar servidor
     app.listen(PORT, () => {
