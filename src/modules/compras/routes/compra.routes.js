@@ -51,6 +51,16 @@ router.post(
 );
 
 /**
+ * DELETE /api/compras/:id
+ * Eliminar compra pendiente (requiere permisos)
+ */
+router.delete(
+  '/:id',
+  checkPermission('gestionar_inventario'),
+  compraController.delete
+);
+
+/**
  * POST /api/compras/:id/cancelar
  * Cancelar compra (requiere permisos)
  */

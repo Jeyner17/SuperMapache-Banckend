@@ -79,7 +79,7 @@ module.exports = {
     await queryInterface.bulkInsert('compras', [
       {
         id: 1,
-        numero_compra: 'COMP-2026-001',
+        numero_compra: 'COMP-2026-000001',
         proveedor_id: 1,
         fecha_compra: now,
         fecha_entrega_estimada: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),

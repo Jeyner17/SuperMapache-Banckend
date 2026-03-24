@@ -11,26 +11,49 @@ class CompraService {
   /**
    * Generar número de compra
    */
-  async generarNumeroCompra() {
+  async generarNumeroCompra(transaction) {
     const year = new Date().getFullYear();
     const prefix = `COMP-${year}-`;
-    
-    const ultimaCompra = await Compra.findOne({
-      where: {
-        numero_compra: {
-          [Op.like]: `${prefix}%`
-        }
-      },
-      order: [['numero_compra', 'DESC']]
+
+    const compras = await Compra.findAll({
+      where: { numero_compra: { [Op.like]: `${prefix}%` } },
+      attributes: ['numero_compra'],
+      lock: transaction.LOCK.UPDATE,
+      transaction
     });
 
-    let numero = 1;
-    if (ultimaCompra) {
-      const ultimoNumero = parseInt(ultimaCompra.numero_compra.split('-')[2]);
-      numero = ultimoNumero + 1;
+    let maxNumero = 0;
+    for (const c of compras) {
+      const partes = c.numero_compra.split('-');
+      const num = parseInt(partes[partes.length - 1], 10);
+      if (!isNaN(num) && num > maxNumero) maxNumero = num;
     }
 
-    return `${prefix}${numero.toString().padStart(6, '0')}`;
+    return `${prefix}${(maxNumero + 1).toString().padStart(6, '0')}`;
+  }
+
+  /**
+   * Generar número de factura interno usando ORM (sin SQL directo)
+   */
+  async generarNumeroFactura(transaction) {
+    const year = new Date().getFullYear();
+    const prefix = `FACT-${year}-`;
+
+    const compras = await Compra.findAll({
+      where: { numero_factura: { [Op.like]: `${prefix}%` } },
+      attributes: ['numero_factura'],
+      lock: transaction.LOCK.UPDATE,
+      transaction
+    });
+
+    let maxNumero = 0;
+    for (const c of compras) {
+      const partes = c.numero_factura.split('-');
+      const num = parseInt(partes[partes.length - 1], 10);
+      if (!isNaN(num) && num > maxNumero) maxNumero = num;
+    }
+
+    return `${prefix}${(maxNumero + 1).toString().padStart(6, '0')}`;
   }
 
   /**
@@ -164,8 +187,9 @@ class CompraService {
         throw new Error('Debe agregar al menos un producto');
       }
 
-      // Generar número de compra
-      const numeroCompra = await this.generarNumeroCompra();
+      // Generar número de compra y factura (ORM, dentro de la transacción con lock)
+      const numeroCompra = await this.generarNumeroCompra(transaction);
+      const numeroFactura = await this.generarNumeroFactura(transaction);
 
       // Calcular totales
       let subtotal = 0;
@@ -219,7 +243,7 @@ class CompraService {
         proveedor_id: data.proveedor_id,
         fecha_compra: data.fecha_compra || new Date(),
         fecha_entrega_estimada: data.fecha_entrega_estimada,
-        numero_factura: data.numero_factura,
+        numero_factura: numeroFactura,
         subtotal,
         impuestos,
         descuento,
@@ -228,8 +252,8 @@ class CompraService {
         tipo_pago: data.tipo_pago || 'contado',
         dias_credito: data.dias_credito || 0,
         fecha_vencimiento_pago: fechaVencimiento,
-        estado_pago: data.tipo_pago === 'credito' ? 'pendiente' : 'pagado',
-        monto_pagado: data.tipo_pago === 'contado' ? total : 0,
+        estado_pago: 'pendiente',
+        monto_pagado: 0,
         usuario_id: usuarioId,
         notas: data.notas
       }, { transaction });
@@ -351,11 +375,19 @@ class CompraService {
       }
 
       // Actualizar compra
-      await compra.update({
+      const updateData = {
         estado: nuevoEstado,
         fecha_entrega_real: datosRecepcion.fecha_recepcion || new Date(),
         notas: compra.notas + (datosRecepcion.notas ? `\n\nRecepción: ${datosRecepcion.notas}` : '')
-      }, { transaction });
+      };
+
+      // Si la compra fue recibida completamente y es de contado, marcar como pagada
+      if (nuevoEstado === 'recibida' && compra.tipo_pago === 'contado') {
+        updateData.estado_pago = 'pagado';
+        updateData.monto_pagado = compra.total;
+      }
+
+      await compra.update(updateData, { transaction });
 
       await transaction.commit();
 
@@ -433,6 +465,36 @@ class CompraService {
       return compra;
     } catch (error) {
       logger.error('Error al registrar pago:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Eliminar compra (solo si está en estado pendiente)
+   */
+  async delete(id) {
+    const transaction = await sequelize.transaction();
+    try {
+      const compra = await Compra.findByPk(id, { transaction });
+
+      if (!compra) {
+        throw new Error('Compra no encontrada');
+      }
+
+      if (compra.estado !== 'pendiente') {
+        throw new Error('Solo se pueden eliminar compras en estado pendiente');
+      }
+
+      await CompraDetalle.destroy({ where: { compra_id: id }, transaction });
+      await compra.destroy({ transaction });
+
+      await transaction.commit();
+
+      logger.info(`Compra eliminada: ${compra.numero_compra}`);
+      return true;
+    } catch (error) {
+      await transaction.rollback();
+      logger.error('Error al eliminar compra:', error);
       throw error;
     }
   }

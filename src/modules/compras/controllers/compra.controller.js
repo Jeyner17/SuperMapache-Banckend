@@ -125,6 +125,24 @@ class CompraController {
   }
 
   /**
+   * DELETE /api/compras/:id
+   * Eliminar compra (solo pendiente)
+   */
+  async delete(req, res) {
+    try {
+      const { id } = req.params;
+      await compraService.delete(id);
+      return ApiResponse.success(res, null, 'Compra eliminada exitosamente');
+    } catch (error) {
+      logger.error('Error al eliminar compra:', error);
+      if (error.message === 'Compra no encontrada') {
+        return ApiResponse.notFound(res, error.message);
+      }
+      return ApiResponse.error(res, error.message, 400);
+    }
+  }
+
+  /**
    * POST /api/compras/:id/pagar
    * Registrar pago de compra
    */
