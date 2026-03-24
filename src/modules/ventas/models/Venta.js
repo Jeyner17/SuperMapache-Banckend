@@ -39,7 +39,7 @@ const Venta = sequelize.define('Venta', {
     defaultValue: 0.00
   },
   metodo_pago: {
-    type: DataTypes.ENUM('efectivo', 'tarjeta', 'transferencia', 'mixto'),
+    type: DataTypes.ENUM('efectivo', 'tarjeta', 'transferencia', 'mixto', 'credito'),
     defaultValue: 'efectivo'
   },
   monto_recibido: {

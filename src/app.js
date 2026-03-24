@@ -18,6 +18,8 @@ const { compraRoutes } = require('./modules/compras');
 const { escaneoRoutes } = require('./modules/escaneo');
 const { ventaRoutes } = require('./modules/ventas');
 const { configuracionRoutes } = require('./modules/configuracion');
+const { cajaRoutes } = require('./modules/caja');
+const { creditoRoutes } = require('./modules/creditos');
 
 
 const app = express();
@@ -69,6 +71,8 @@ app.use('/api/compras', compraRoutes);
 app.use('/api/escaneo', escaneoRoutes);
 app.use('/api/ventas', ventaRoutes);
 app.use('/api/configuracion', configuracionRoutes);
+app.use('/api/caja', cajaRoutes);
+app.use('/api/creditos', creditoRoutes);
 
 
 // Ruta no encontrada

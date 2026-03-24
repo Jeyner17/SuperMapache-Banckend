@@ -39,7 +39,7 @@ module.exports = {
         defaultValue: 0.00
       },
       metodo_pago: {
-        type: Sequelize.ENUM('efectivo', 'tarjeta', 'transferencia', 'mixto'),
+        type: Sequelize.ENUM('efectivo', 'tarjeta', 'transferencia', 'mixto', 'credito'),
         defaultValue: 'efectivo'
       },
       monto_recibido: {

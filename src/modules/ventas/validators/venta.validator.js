@@ -22,7 +22,7 @@ const createVentaValidator = [
   
   body('metodo_pago')
     .optional()
-    .isIn(['efectivo', 'tarjeta', 'transferencia', 'mixto'])
+    .isIn(['efectivo', 'tarjeta', 'transferencia', 'mixto', 'credito'])
     .withMessage('Método de pago inválido'),
   
   body('monto_recibido')

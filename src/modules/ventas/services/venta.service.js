@@ -3,6 +3,8 @@ const { Producto } = require('../../productos/models');
 const { Categoria } = require('../../categorias/models');
 const { User } = require('../../auth/models');
 const inventarioService = require('../../inventario/services/inventario.service');
+const cajaService = require('../../caja/services/caja.service');
+const creditoService = require('../../creditos/services/credito.service');
 const { Op } = require('sequelize');
 const { sequelize } = require('../../../database/connection');
 const logger = require('../../../shared/utils/logger');
@@ -110,12 +112,18 @@ class VentaService {
 
       const total = subtotal + impuestos - descuento;
 
-      // Calcular cambio
-      const montoRecibido = parseFloat(data.monto_recibido) || 0;
+      // Calcular cambio (no aplica para ventas a crédito)
+      const esCredito = data.metodo_pago === 'credito';
+      const montoRecibido = esCredito ? 0 : (parseFloat(data.monto_recibido) || 0);
       const cambio = montoRecibido > 0 ? montoRecibido - total : 0;
 
-      if (montoRecibido > 0 && montoRecibido < total) {
+      if (!esCredito && montoRecibido > 0 && montoRecibido < total) {
         throw new Error('El monto recibido es insuficiente');
+      }
+
+      // Para ventas a crédito se requiere cliente
+      if (esCredito && !data.cliente_id) {
+        throw new Error('Debe seleccionar un cliente para ventas a crédito');
       }
 
       // Crear venta
@@ -145,6 +153,31 @@ class VentaService {
       await transaction.commit();
 
       logger.info(`Venta creada: ${numeroVenta} - Total: $${total}`);
+
+      // Registrar en caja si hay turno abierto (best-effort, no falla la venta)
+      // Las ventas a crédito no generan movimiento de efectivo inmediato
+      if (!esCredito) {
+        await cajaService.registrarMovimientoVenta({
+          id: venta.id,
+          numero_venta: numeroVenta,
+          total,
+          metodo_pago: data.metodo_pago || 'efectivo'
+        }, usuarioId);
+      }
+
+      // Crear crédito automáticamente si la venta es a crédito (best-effort)
+      if (esCredito) {
+        try {
+          await creditoService.crearCreditoDesdeVenta(
+            { id: venta.id, numero_venta: numeroVenta, total },
+            data.cliente_id,
+            data.dias_plazo || 30,
+            usuarioId
+          );
+        } catch (creditoError) {
+          logger.error('Error al crear crédito desde venta (no crítico):', creditoError);
+        }
+      }
 
       return await this.getById(venta.id);
     } catch (error) {
