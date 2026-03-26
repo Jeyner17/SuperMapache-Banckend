@@ -1,6 +1,8 @@
-const authService = require('../services/auth.service');
-const ApiResponse = require('../../../shared/utils/response');
-const logger = require('../../../shared/utils/logger');
+const authService      = require('../services/auth.service');
+const ApiResponse      = require('../../../shared/utils/response');
+const logger           = require('../../../shared/utils/logger');
+const auditoriaService = require('../../auditoria/services/auditoria.service');
+const getClientIp      = require('../../../shared/utils/getClientIp');
 
 class AuthController {
   /**
@@ -12,6 +14,18 @@ class AuthController {
       const { username, password } = req.body;
 
       const result = await authService.login(username, password);
+
+      // Registrar en auditoría (best-effort)
+      auditoriaService.registrar({
+        usuario_id:     result.user.id,
+        usuario_nombre: result.user.username,
+        usuario_rol:    result.user.rol,
+        accion:         'login',
+        modulo:         'Autenticación',
+        descripcion:    `Inicio de sesión: ${result.user.username}`,
+        ip:             getClientIp(req),
+        user_agent:     req.get('User-Agent'),
+      }).catch(() => {});
 
       return ApiResponse.success(res, result, 'Login exitoso');
 
@@ -27,9 +41,18 @@ class AuthController {
    */
   async logout(req, res) {
     try {
-      // En este caso, el logout se maneja en el frontend
-      // eliminando el token. Aquí solo registramos el evento
       logger.info(`Logout: ${req.user.username}`);
+
+      auditoriaService.registrar({
+        usuario_id:     req.user.id,
+        usuario_nombre: req.user.username,
+        usuario_rol:    req.user.rol,
+        accion:         'logout',
+        modulo:         'Autenticación',
+        descripcion:    `Cierre de sesión: ${req.user.username}`,
+        ip:             getClientIp(req),
+        user_agent:     req.get('User-Agent'),
+      }).catch(() => {});
 
       return ApiResponse.success(res, null, 'Sesión cerrada exitosamente');
 

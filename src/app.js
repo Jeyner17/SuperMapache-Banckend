@@ -20,10 +20,15 @@ const { ventaRoutes } = require('./modules/ventas');
 const { configuracionRoutes } = require('./modules/configuracion');
 const { cajaRoutes } = require('./modules/caja');
 const { creditoRoutes } = require('./modules/creditos');
-const { alertaRoutes } = require('./modules/alertas');
+const { alertaRoutes }                   = require('./modules/alertas');
+const { gastoRoutes }                    = require('./modules/gastos');
+const { auditoriaRoutes, auditoriaMiddleware } = require('./modules/auditoria');
 
 
 const app = express();
+
+// Confiar en el primer proxy (necesario para que req.ip devuelva la IP real)
+app.set('trust proxy', 1);
 
 // Middlewares globales
 app.use(helmet());
@@ -37,6 +42,9 @@ app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
+
+// Middleware de auditoría automática (debe ir antes de las rutas)
+app.use('/api', auditoriaMiddleware);
 
 // Archivos estáticos — cross-origin necesario porque frontend y backend están en puertos distintos
 app.use('/uploads', (req, res, next) => {
@@ -74,7 +82,9 @@ app.use('/api/ventas', ventaRoutes);
 app.use('/api/configuracion', configuracionRoutes);
 app.use('/api/caja', cajaRoutes);
 app.use('/api/creditos', creditoRoutes);
-app.use('/api/alertas', alertaRoutes);
+app.use('/api/alertas',    alertaRoutes);
+app.use('/api/gastos',     gastoRoutes);
+app.use('/api/auditoria',  auditoriaRoutes);
 
 
 // Ruta no encontrada

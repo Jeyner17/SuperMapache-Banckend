@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const { sequelize } = require('../../../shared/config/database');
+const { sequelize } = require('../../../database/connection');
 
 const Alerta = sequelize.define('Alerta', {
   tipo: {
