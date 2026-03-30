@@ -21,8 +21,9 @@ const { configuracionRoutes } = require('./modules/configuracion');
 const { cajaRoutes } = require('./modules/caja');
 const { creditoRoutes } = require('./modules/creditos');
 const { alertaRoutes }                   = require('./modules/alertas');
-const { gastoRoutes }                    = require('./modules/gastos');
+const { gastoRoutes }                         = require('./modules/gastos');
 const { auditoriaRoutes, auditoriaMiddleware } = require('./modules/auditoria');
+const { reporteRoutes }                        = require('./modules/reportes');
 
 
 const app = express();
@@ -85,6 +86,7 @@ app.use('/api/creditos', creditoRoutes);
 app.use('/api/alertas',    alertaRoutes);
 app.use('/api/gastos',     gastoRoutes);
 app.use('/api/auditoria',  auditoriaRoutes);
+app.use('/api/reportes',   reporteRoutes);
 
 
 // Ruta no encontrada
