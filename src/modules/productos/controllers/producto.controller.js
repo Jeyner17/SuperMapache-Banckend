@@ -126,25 +126,36 @@ class ProductoController {
   }
 
   /**
+   * GET /api/productos/:id/verificar-eliminacion
+   */
+  async verificarEliminacion(req, res) {
+    try {
+      const { id } = req.params;
+      const resultado = await productoService.verificarEliminacion(id);
+      return ApiResponse.success(res, resultado, 'Verificación completada');
+    } catch (error) {
+      logger.error('Error al verificar eliminación:', error);
+      if (error.message === 'Producto no encontrado') {
+        return ApiResponse.notFound(res, error.message);
+      }
+      return ApiResponse.serverError(res, 'Error al verificar eliminación');
+    }
+  }
+
+  /**
    * DELETE /api/productos/:id
    */
   async delete(req, res) {
     try {
       const { id } = req.params;
-
-      logger.info(`Solicitud de eliminación de producto ID: ${id}`);
-
       await productoService.delete(id);
-
-      logger.info(`Producto eliminado exitosamente ID: ${id}`);
-
       return ApiResponse.success(res, { eliminado: true }, 'Producto eliminado exitosamente');
     } catch (error) {
       logger.error('Error al eliminar producto:', error);
       if (error.message === 'Producto no encontrado') {
         return ApiResponse.notFound(res, error.message);
       }
-      return ApiResponse.error(res, error.message, 400);
+      return ApiResponse.error(res, error.message, 400, error.razones || null);
     }
   }
 }

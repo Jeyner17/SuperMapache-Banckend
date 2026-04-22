@@ -43,11 +43,11 @@ router.put(
 
 /**
  * DELETE /api/categorias/:id
- * Eliminar categoría (solo admin)
+ * Eliminar categoría (admin y supervisor)
  */
 router.delete(
   '/:id',
-  checkPermission('*'),
+  checkPermission('gestionar_inventario'),
   categoriaController.delete
 );
 

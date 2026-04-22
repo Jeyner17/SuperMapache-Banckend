@@ -1,5 +1,7 @@
 const { Producto } = require('../models');
 const { Categoria } = require('../../categorias/models');
+const { InventarioLote } = require('../../inventario/models');
+const { VentaDetalle } = require('../../ventas/models');
 const { Op } = require('sequelize');
 const logger = require('../../../shared/utils/logger');
 
@@ -209,27 +211,61 @@ class ProductoService {
   }
 
   /**
-   * Eliminar producto (soft delete)
+   * Verificar si un producto puede eliminarse
    */
-  async delete(id) {
+  async verificarEliminacion(id) {
     try {
       const producto = await Producto.findByPk(id);
-
       if (!producto) {
         throw new Error('Producto no encontrado');
       }
 
-      // TODO: Verificar si tiene inventario antes de eliminar
-      
-      // Soft delete - actualizar a inactivo
-      const resultado = await producto.update({ activo: false });
-      
-      logger.info(`Producto eliminado (soft delete): ${producto.nombre} - ID: ${id}`);
-      
-      // Verificar que se actualizó
-      const productoActualizado = await Producto.findByPk(id);
-      logger.info(`Estado después de eliminar: activo=${productoActualizado.activo}`);
-      
+      const stockTotal = (await InventarioLote.sum('cantidad_actual', {
+        where: { producto_id: id, cantidad_actual: { [Op.gt]: 0 } }
+      })) || 0;
+
+      const totalVentas = await VentaDetalle.count({
+        where: { producto_id: id }
+      });
+
+      return {
+        puedeEliminar: stockTotal === 0 && totalVentas === 0,
+        tieneStock: stockTotal > 0,
+        stockTotal,
+        tieneVentas: totalVentas > 0,
+        totalVentas
+      };
+    } catch (error) {
+      logger.error('Error al verificar eliminación:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Eliminar producto (hard delete con validaciones)
+   */
+  async delete(id) {
+    try {
+      const producto = await Producto.findByPk(id);
+      if (!producto) {
+        throw new Error('Producto no encontrado');
+      }
+
+      const verificacion = await this.verificarEliminacion(id);
+      if (!verificacion.puedeEliminar) {
+        const error = new Error('No se puede eliminar el producto');
+        error.razones = [];
+        if (verificacion.tieneStock) {
+          error.razones.push(`Tiene ${verificacion.stockTotal} unidades en inventario`);
+        }
+        if (verificacion.tieneVentas) {
+          error.razones.push(`Tiene ${verificacion.totalVentas} ventas registradas`);
+        }
+        throw error;
+      }
+
+      await producto.destroy();
+      logger.info(`Producto eliminado: ${producto.nombre}`);
       return true;
     } catch (error) {
       logger.error('Error al eliminar producto:', error);

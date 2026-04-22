@@ -123,14 +123,14 @@ class CategoriaService {
         throw new Error('Categoría no encontrada');
       }
 
-      // Verificar si tiene productos
-      if (categoria.productos && categoria.productos.length > 0) {
+      // Verificar si tiene productos activos
+      const productosActivos = categoria.productos?.filter(p => p.activo) || [];
+      if (productosActivos.length > 0) {
         throw new Error('No se puede eliminar una categoría con productos asociados');
       }
 
-      // Soft delete
-      await categoria.update({ activo: false });
-      
+      await categoria.destroy();
+
       logger.info(`Categoría eliminada: ${categoria.nombre}`);
       
       return true;

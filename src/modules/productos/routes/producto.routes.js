@@ -21,6 +21,11 @@ router.get('/', productoController.getAll);
 router.get('/codigo/:codigoBarras', productoController.getByCodigoBarras);
 
 /**
+ * GET /api/productos/:id/verificar-eliminacion
+ */
+router.get('/:id/verificar-eliminacion', productoController.verificarEliminacion);
+
+/**
  * GET /api/productos/:id
  */
 router.get('/:id', productoController.getById);
@@ -52,7 +57,7 @@ router.put(
  */
 router.delete(
   '/:id',
-  checkPermission('*'),
+  checkPermission('gestionar_inventario'),
   productoController.delete
 );
 
